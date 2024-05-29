@@ -5,9 +5,13 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/lekan-pvp/url-shortener/internal/config"
 	"github.com/lekan-pvp/url-shortener/internal/lib/logger/sl"
 	"github.com/lekan-pvp/url-shortener/internal/storage/sqlite"
+
+	mwLogger "github.com/lekan-pvp/url-shortener/internal/http-server/middleware/logger"
 )
 
 const (
@@ -33,6 +37,13 @@ func main() {
 	}
 
 	_ = storage
+
+	router := chi.NewRouter()
+
+	router.Use(middleware.RequestID)
+	router.Use(mwLogger.New(log))
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
 
 	// TODO: init router: chi
 
