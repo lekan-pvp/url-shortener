@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 
 	"github.com/go-chi/chi/v5"
@@ -12,6 +13,7 @@ import (
 	"github.com/lekan-pvp/url-shortener/internal/lib/logger/sl"
 	"github.com/lekan-pvp/url-shortener/internal/storage/sqlite"
 
+	"github.com/lekan-pvp/url-shortener/internal/http-server/handlers/url/save"
 	mwLogger "github.com/lekan-pvp/url-shortener/internal/http-server/middleware/logger"
 )
 
@@ -46,8 +48,23 @@ func main() {
 	router.Use(middleware.Recoverer)
 	router.Use(middleware.URLFormat)
 
-	// TODO: init router: chi
+	router.Post("/url", save.New(log, storage))
 
+	log.Info("starting server", slog.String("address", cfg.Address))
+
+	srv := &http.Server{
+		Addr:         cfg.Address,
+		Handler:      router,
+		ReadTimeout:  cfg.HTTPServer.Timeout,
+		WriteTimeout: cfg.HTTPServer.Timeout,
+		IdleTimeout:  cfg.HTTPServer.IdleTimeout,
+	}
+
+	if err := srv.ListenAndServe(); err != nil {
+		log.Error("failed to start server", sl.Err(err))
+	}
+
+	log.Error("server stopped")
 	// TODO: start server
 
 }
